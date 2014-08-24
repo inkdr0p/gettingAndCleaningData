@@ -25,21 +25,21 @@ run_analysis <- function() {
     trainRows <- cbind(trainSubjects, trainActivities, trainRows)
     
     ## Combine 'test' and 'train' tables
-    merged <- rbind(testRows, trainRows)
+    mergedData <- rbind(testRows, trainRows)
     
     ## Extract mean() and std() data
     featureNames <- read.table("./UCI HAR Dataset/features.txt",
                                colClasses = "character")[, 2]
-    desiredFeats <- grepl("mean\\(\\)|std\\(\\)", featureNames)
-    merged <- merged[c(TRUE, TRUE, desiredFeats)]
+    desiredFeatures <- grepl("mean\\()|std\\()", featureNames)
+    mergedData <- mergedData[c(TRUE, TRUE, desiredFeatures)]
     
-    ## Apply names to the activities in the data set
+    ## Replace each activity code with its corresponding activity label
     activityNames <- read.table("./UCI HAR Dataset/activity_labels.txt",
                                 colClasses = "character")[, 2]
-    merged[, 2] <- sapply(merged[, 2], function(x) {activityNames[x]})
+    mergedData[, 2] <- sapply(mergedData[, 2], function(x) {activityNames[x]})
     
     ## Clean the feature labels
-    featureNames <- featureNames[desiredFeats]
+    featureNames <- featureNames[desiredFeatures]
     patterns <- c("-", "BodyBody", "mean()", "std()")
     replacements <- c("", "Body", "Mean", "Std")
     for (i in seq_along(patterns)) {
@@ -48,16 +48,16 @@ run_analysis <- function() {
     }
     
     ## Label the columns of the data set
-    names(merged) <- c("subject", "activity", featureNames)
+    names(mergedData) <- c("subject", "activity", featureNames)
     
     ## Create a data set with the mean of each variable for each activity and
     ## each subject
-    mergedMelt <- melt(merged, id = c("subject", "activity"),
-                       measure.vars = featureNames)
+    mergedMelt <- melt(mergedData, id = c("subject", "activity"))
     tidy <- dcast(mergedMelt, subject + activity ~ variable, mean)
     
     ## Write the tidy data set to a txt file
     write.table(tidy, "tidy_data.txt", row.names = FALSE)
+    
     if (file.exists("tidy_data.txt")) {
         message("tidy_data.txt was successfully created")
     } else {
